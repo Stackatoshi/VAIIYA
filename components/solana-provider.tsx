@@ -8,8 +8,6 @@ import {
   SolflareWalletAdapter,
   TorusWalletAdapter,
   LedgerWalletAdapter,
-  SlopeWalletAdapter,
-  // Remove BackpackWalletAdapter and CoinbaseWalletAdapter
 } from "@solana/wallet-adapter-wallets"
 import { WalletModalProvider } from "@solana/wallet-adapter-react-ui"
 import { clusterApiUrl } from "@solana/web3.js"
@@ -22,28 +20,30 @@ interface SolanaProviderProps {
 }
 
 export const SolanaProvider: FC<SolanaProviderProps> = ({ children }) => {
-  // The network can be set to 'devnet', 'testnet', or 'mainnet-beta'
-  const network = WalletAdapterNetwork.Mainnet
+  // Use devnet for testing to avoid mainnet connection issues
+  const network = WalletAdapterNetwork.Devnet
 
-  // You can also provide a custom RPC endpoint
-  const endpoint = useMemo(() => clusterApiUrl(network), [network])
+  // Use a more reliable RPC endpoint
+  // For a real app, you might want to use a custom RPC endpoint
+  const endpoint = useMemo(() => {
+    // Use clusterApiUrl as fallback
+    return clusterApiUrl(network)
+  }, [network])
 
-  // @solana/wallet-adapter-wallets includes all the adapters but supports tree shaking and lazy loading
+  // Configure wallet adapters
   const wallets = useMemo(
     () => [
       new PhantomWalletAdapter(),
       new SolflareWalletAdapter(),
       new TorusWalletAdapter(),
       new LedgerWalletAdapter(),
-      new SlopeWalletAdapter(),
-      // BackpackWalletAdapter and CoinbaseWalletAdapter removed
     ],
     [network],
   )
 
   return (
     <ConnectionProvider endpoint={endpoint}>
-      <WalletProvider wallets={wallets} autoConnect>
+      <WalletProvider wallets={wallets} autoConnect={false}>
         <WalletModalProvider>{children}</WalletModalProvider>
       </WalletProvider>
     </ConnectionProvider>

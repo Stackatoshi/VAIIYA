@@ -1,6 +1,6 @@
 "use client"
 
-import { type FC, useState } from "react"
+import { type FC, useState, useCallback } from "react"
 import { useWallet } from "@solana/wallet-adapter-react"
 import { useWalletModal } from "@solana/wallet-adapter-react-ui"
 import { ChevronDown, Copy, LogOut } from "lucide-react"
@@ -9,23 +9,34 @@ export const WalletButton: FC = () => {
   const { publicKey, wallet, disconnect } = useWallet()
   const { setVisible } = useWalletModal()
   const [showDropdown, setShowDropdown] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
-  const handleConnect = () => {
-    setVisible(true)
-  }
+  const handleConnect = useCallback(() => {
+    try {
+      setError(null)
+      setVisible(true)
+    } catch (err) {
+      console.error("Wallet connection error:", err)
+      setError("Failed to open wallet connection modal")
+    }
+  }, [setVisible])
 
-  const handleDisconnect = () => {
-    disconnect()
-    setShowDropdown(false)
-  }
+  const handleDisconnect = useCallback(async () => {
+    try {
+      await disconnect()
+      setShowDropdown(false)
+    } catch (err) {
+      console.error("Wallet disconnect error:", err)
+    }
+  }, [disconnect])
 
-  const copyAddress = () => {
+  const copyAddress = useCallback(() => {
     if (publicKey) {
       navigator.clipboard.writeText(publicKey.toString())
       // You could add a toast notification here
     }
     setShowDropdown(false)
-  }
+  }, [publicKey])
 
   // Format the wallet address to show only the first and last few characters
   const formatWalletAddress = (address: string) => {
@@ -34,12 +45,15 @@ export const WalletButton: FC = () => {
 
   if (!publicKey) {
     return (
-      <button
-        onClick={handleConnect}
-        className="bg-gradient-to-r from-purple-500 to-teal-400 text-white px-4 py-2 rounded-full text-sm font-medium hover:opacity-90 transition-opacity"
-      >
-        Connect
-      </button>
+      <div>
+        <button
+          onClick={handleConnect}
+          className="bg-gradient-to-r from-purple-500 to-teal-400 text-white px-4 py-2 rounded-full text-sm font-medium hover:opacity-90 transition-opacity"
+        >
+          Connect
+        </button>
+        {error && <div className="text-red-500 text-xs mt-1">{error}</div>}
+      </div>
     )
   }
 

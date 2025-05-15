@@ -2,6 +2,7 @@ import TokenSwap from "@/components/token-swap"
 import Navbar from "@/components/navbar"
 import TrendingTokens from "@/components/trending-tokens"
 import WalletBalance from "@/components/wallet-balance"
+import PopularTokens from "@/components/popular-tokens"
 
 export default function Home() {
   return (
@@ -15,23 +16,7 @@ export default function Home() {
       <div className="container mx-auto px-4 pt-8 pb-20 relative z-10">
         <div className="max-w-xl mx-auto">
           {/* Popular tokens */}
-          <div className="flex items-center justify-center gap-2 mb-6 flex-wrap">
-            <div className="bg-white/5 rounded-full px-3 py-1 text-sm flex items-center gap-1">
-              <span className="w-2 h-2 rounded-full bg-green-400"></span> VAIIYA
-            </div>
-            <div className="bg-white/5 rounded-full px-3 py-1 text-sm flex items-center gap-1">
-              <span className="w-2 h-2 rounded-full bg-gray-400"></span> SOL
-            </div>
-            <div className="bg-white/5 rounded-full px-3 py-1 text-sm flex items-center gap-1">
-              <span className="w-2 h-2 rounded-full bg-blue-400"></span> USDC
-            </div>
-            <div className="bg-white/5 rounded-full px-3 py-1 text-sm flex items-center gap-1">
-              <span className="w-2 h-2 rounded-full bg-red-400"></span> BONK
-            </div>
-            <div className="bg-white/5 rounded-full px-3 py-1 text-sm flex items-center gap-1">
-              <span className="w-2 h-2 rounded-full bg-yellow-400"></span> JUP
-            </div>
-          </div>
+          <PopularTokens />
 
           {/* Swap tabs */}
           <div className="flex justify-center gap-2 mb-4">
