@@ -11,6 +11,7 @@ import TokenSelectModal from "./token-select-modal"
 import type { TokenData } from "@/types/token"
 import { getSwapQuote, executeSwap } from "@/services/swap"
 import type { JupiterQuoteResponse } from "@/types/jupiter"
+import { FEE_CONFIG } from "@/services/fee"
 
 export default function TokenSwap() {
   const { publicKey, signTransaction, sendTransaction } = useWallet()
@@ -77,11 +78,13 @@ export default function TokenSwap() {
         const decimals = sellToken.decimals
         const amountInSmallestUnit = (Number(sellAmount) * 10 ** decimals).toString()
 
-        const { quote, error } = await getSwapQuote(
+        const { quote, error, feeCalculation } = await getSwapQuote(
           sellToken.address,
           buyToken.address,
           amountInSmallestUnit,
           Math.round(settings.slippage * 100), // Convert to basis points
+          sellToken.decimals,
+          sellToken.price || 1,
         )
 
         if (error) {
@@ -174,6 +177,8 @@ export default function TokenSwap() {
         buyToken.address,
         amountInSmallestUnit,
         Math.round(settings.slippage * 100), // Convert to basis points
+        sellToken.decimals,
+        sellToken.price || 1,
       )
 
       if (!result.success) {
@@ -315,6 +320,12 @@ export default function TokenSwap() {
                 className={`text-white ${priceImpact > 1 ? "text-yellow-400" : ""} ${priceImpact > 3 ? "text-red-400" : ""}`}
               >
                 {priceImpact > 0 ? `${priceImpact.toFixed(2)}%` : "0.00%"}
+              </span>
+            </div>
+            <div className="flex items-center justify-between text-sm mt-1">
+              <span className="text-white/70">Platform fee</span>
+              <span className="text-white text-green-400">
+                {FEE_CONFIG.FEE_PERCENTAGE * 100}% (vs 0.85% on Phantom)
               </span>
             </div>
             <div className="flex items-center justify-between text-sm mt-1">

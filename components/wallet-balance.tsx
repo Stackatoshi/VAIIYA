@@ -26,12 +26,14 @@ export default function WalletBalance() {
       setIsLoading(true)
       setError(null)
       try {
-        // Connect to Solana devnet for testing
-        const connection = new Connection("https://api.devnet.solana.com", "confirmed")
+        // Connect to Solana mainnet
+        const connection = new Connection("https://api.mainnet-beta.solana.com", "confirmed")
 
         // Fetch SOL balance
         const balance = await connection.getBalance(publicKey)
-        setSolBalance(balance / LAMPORTS_PER_SOL)
+        const solBalanceInSol = balance / LAMPORTS_PER_SOL
+        setSolBalance(solBalanceInSol)
+        console.log("SOL Balance:", solBalanceInSol, "SOL")
 
         // Fetch token list
         const response = await fetch("/api/tokens")
@@ -84,12 +86,14 @@ export default function WalletBalance() {
     setIsLoading(true)
     setError(null)
     try {
-      // Connect to Solana devnet for testing
-      const connection = new Connection("https://api.devnet.solana.com", "confirmed")
+      // Connect to Solana mainnet
+      const connection = new Connection("https://api.mainnet-beta.solana.com", "confirmed")
 
       // Fetch SOL balance
       const balance = await connection.getBalance(publicKey)
-      setSolBalance(balance / LAMPORTS_PER_SOL)
+      const solBalanceInSol = balance / LAMPORTS_PER_SOL
+      setSolBalance(solBalanceInSol)
+      console.log("SOL Balance (refresh):", solBalanceInSol, "SOL")
 
       // In a real app, you would fetch token balances here
       // For this demo, we'll keep the existing mock data

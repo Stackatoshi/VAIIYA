@@ -20,8 +20,8 @@ interface SolanaProviderProps {
 }
 
 export const SolanaProvider: FC<SolanaProviderProps> = ({ children }) => {
-  // Use devnet for testing to avoid mainnet connection issues
-  const network = WalletAdapterNetwork.Devnet
+  // Use mainnet for production
+  const network = WalletAdapterNetwork.Mainnet
 
   // Use a more reliable RPC endpoint
   // For a real app, you might want to use a custom RPC endpoint

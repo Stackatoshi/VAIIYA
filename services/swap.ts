@@ -1,6 +1,7 @@
-import { type Connection, Transaction } from "@solana/web3.js"
+import { type Connection, Transaction, PublicKey, SystemProgram, LAMPORTS_PER_SOL } from "@solana/web3.js"
 import { getJupiterQuote, getJupiterSwap } from "./jupiter"
 import type { JupiterQuoteResponse } from "@/types/jupiter"
+import { calculateSwapFee, getFeeRecipient, FEE_CONFIG } from "./fee"
 
 export async function executeSwap(
   connection: Connection,
@@ -9,24 +10,35 @@ export async function executeSwap(
   toMint: string,
   amount: string,
   slippageBps = 50,
+  tokenDecimals = 9,
+  tokenPrice = 1,
 ): Promise<{ success: boolean; message: string; signature?: string }> {
   try {
     if (!wallet.publicKey) {
       return { success: false, message: "Wallet not connected" }
     }
 
-    // 1. Get quote from Jupiter
-    const quoteResponse = await getJupiterQuote(fromMint, toMint, amount, slippageBps)
+    // 1. Calculate fee
+    const feeCalculation = calculateSwapFee(amount, tokenDecimals, tokenPrice)
+    console.log("Fee calculation:", {
+      originalAmount: feeCalculation.originalAmount,
+      feeAmount: feeCalculation.feeAmount,
+      netAmount: feeCalculation.netAmount,
+      feePercentage: FEE_CONFIG.FEE_PERCENTAGE * 100,
+    })
+
+    // 2. Get quote from Jupiter with net amount (after fee)
+    const quoteResponse = await getJupiterQuote(fromMint, toMint, feeCalculation.netAmount, slippageBps)
 
     if (!quoteResponse) {
       return { success: false, message: "Failed to get quote" }
     }
 
-    // 2. Get swap transaction
+    // 3. Get swap transaction
     const swapParams = {
       inputMint: fromMint,
       outputMint: toMint,
-      amount,
+      amount: feeCalculation.netAmount, // Use net amount for swap
       slippageBps,
       userPublicKey: wallet.publicKey.toString(),
     }
@@ -37,25 +49,49 @@ export async function executeSwap(
       return { success: false, message: "Failed to get swap transaction" }
     }
 
-    // 3. Deserialize and sign the transaction
+    // 4. Deserialize the swap transaction
     const swapTransactionBuf = Buffer.from(swapResponse.swapTransaction, "base64")
-    const transaction = Transaction.from(swapTransactionBuf)
+    const swapTransaction = Transaction.from(swapTransactionBuf)
 
-    // 4. Execute the transaction
-    const signature = await wallet.sendTransaction(transaction, connection)
+    // 5. Create fee transfer transaction
+    const feeRecipient = getFeeRecipient()
+    const feeTransferTransaction = new Transaction()
+    
+    // Add fee transfer instruction
+    const feeTransferInstruction = SystemProgram.transfer({
+      fromPubkey: wallet.publicKey,
+      toPubkey: feeRecipient,
+      lamports: Math.floor(feeCalculation.feeInSol * LAMPORTS_PER_SOL),
+    })
+    
+    feeTransferTransaction.add(feeTransferInstruction)
 
-    // 5. Wait for confirmation
+    // 6. Combine transactions or execute separately
+    // For now, we'll execute the swap first, then the fee transfer
+    const swapSignature = await wallet.sendTransaction(swapTransaction, connection)
+    
+    // Wait for swap confirmation
     const latestBlockhash = await connection.getLatestBlockhash()
     await connection.confirmTransaction({
       blockhash: latestBlockhash.blockhash,
       lastValidBlockHeight: latestBlockhash.lastValidBlockHeight,
-      signature,
+      signature: swapSignature,
+    })
+
+    // Execute fee transfer
+    const feeSignature = await wallet.sendTransaction(feeTransferTransaction, connection)
+    
+    // Wait for fee transfer confirmation
+    await connection.confirmTransaction({
+      blockhash: latestBlockhash.blockhash,
+      lastValidBlockHeight: latestBlockhash.lastValidBlockHeight,
+      signature: feeSignature,
     })
 
     return {
       success: true,
-      message: "Swap executed successfully",
-      signature,
+      message: `Swap executed successfully. Fee: ${(FEE_CONFIG.FEE_PERCENTAGE * 100).toFixed(2)}%`,
+      signature: swapSignature,
     }
   } catch (error) {
     console.error("Error executing swap:", error)
@@ -71,10 +107,25 @@ export async function getSwapQuote(
   toMint: string,
   amount: string,
   slippageBps = 50,
-): Promise<{ quote: JupiterQuoteResponse | null; error: string | null }> {
+  tokenDecimals = 9,
+  tokenPrice = 1,
+): Promise<{ quote: JupiterQuoteResponse | null; error: string | null; feeCalculation?: any }> {
   try {
-    const quote = await getJupiterQuote(fromMint, toMint, amount, slippageBps)
-    return { quote, error: null }
+    // Calculate fee first
+    const feeCalculation = calculateSwapFee(amount, tokenDecimals, tokenPrice)
+    
+    // Get quote with net amount (after fee)
+    const quote = await getJupiterQuote(fromMint, toMint, feeCalculation.netAmount, slippageBps)
+    
+    return { 
+      quote, 
+      error: null,
+      feeCalculation: {
+        ...feeCalculation,
+        feePercentage: FEE_CONFIG.FEE_PERCENTAGE * 100,
+        feeInUSD: feeCalculation.feeInSol,
+      }
+    }
   } catch (error) {
     return {
       quote: null,
