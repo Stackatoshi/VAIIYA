@@ -6,15 +6,20 @@ import { useWalletModal } from "@solana/wallet-adapter-react-ui"
 import { ChevronDown, Copy, LogOut } from "lucide-react"
 
 export const WalletButton: FC = () => {
-  const { publicKey, wallet, disconnect } = useWallet()
+  const { publicKey, wallet, disconnect, connecting, connected } = useWallet()
   const { setVisible } = useWalletModal()
   const [showDropdown, setShowDropdown] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const handleConnect = useCallback(() => {
+  const handleConnect = useCallback(async () => {
     try {
       setError(null)
       setVisible(true)
+      
+      // Add a small delay to ensure the modal is properly opened
+      setTimeout(() => {
+        console.log("Wallet modal opened")
+      }, 100)
     } catch (err) {
       console.error("Wallet connection error:", err)
       setError("Failed to open wallet connection modal")
@@ -50,9 +55,13 @@ export const WalletButton: FC = () => {
           onClick={handleConnect}
           className="bg-gradient-to-r from-purple-500 to-teal-400 text-white px-4 py-2 rounded-full text-sm font-medium hover:opacity-90 transition-opacity"
         >
-          Connect
+          {connecting ? "Connecting..." : "Connect"}
         </button>
         {error && <div className="text-red-500 text-xs mt-1">{error}</div>}
+        {/* Debug info - remove in production */}
+        <div className="text-xs text-white/50 mt-1">
+          Status: {connected ? "Connected" : "Disconnected"} | Connecting: {connecting ? "Yes" : "No"}
+        </div>
       </div>
     )
   }

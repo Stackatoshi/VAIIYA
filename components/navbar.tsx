@@ -25,11 +25,8 @@ export default function Navbar() {
             <Link href="#" className="text-white hover:text-purple-400 transition-colors text-sm font-medium">
               Spot
             </Link>
-            <Link href="#" className="text-white hover:text-purple-400 transition-colors text-sm font-medium relative">
+            <Link href="#" className="text-white hover:text-purple-400 transition-colors text-sm font-medium">
               Pro
-              <span className="absolute -top-1 -right-6 bg-gradient-to-r from-purple-500 to-teal-400 text-[10px] px-1.5 rounded-full">
-                NEW
-              </span>
             </Link>
             <Link href="#" className="text-white hover:text-purple-400 transition-colors text-sm font-medium">
               Perps

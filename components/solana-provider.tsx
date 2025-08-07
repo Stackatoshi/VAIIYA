@@ -1,6 +1,6 @@
 "use client"
 
-import { type FC, type ReactNode, useMemo } from "react"
+import { type FC, type ReactNode, useMemo, useEffect } from "react"
 import { ConnectionProvider, WalletProvider } from "@solana/wallet-adapter-react"
 import { WalletAdapterNetwork } from "@solana/wallet-adapter-base"
 import {
@@ -38,12 +38,17 @@ export const SolanaProvider: FC<SolanaProviderProps> = ({ children }) => {
       new TorusWalletAdapter(),
       new LedgerWalletAdapter(),
     ],
-    [network],
+    [],
   )
+
+  // Debug wallet detection
+  useEffect(() => {
+    console.log("Available wallets:", wallets.map(w => w.name))
+  }, [wallets])
 
   return (
     <ConnectionProvider endpoint={endpoint}>
-      <WalletProvider wallets={wallets} autoConnect={false}>
+      <WalletProvider wallets={wallets} autoConnect={true}>
         <WalletModalProvider>{children}</WalletModalProvider>
       </WalletProvider>
     </ConnectionProvider>
